@@ -1,5 +1,9 @@
 import * as webllm from "https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm/dist/index.min.js";
 
+/* ---------------------------------------------------------
+   MODEL + ENGINE SETUP
+--------------------------------------------------------- */
+
 const MODEL_LLAMA3 = "Llama-3-8B-Instruct-q4f16_1";
 const MODEL_PHI3 = "Phi-3-mini-4k-instruct-q4f16_1";
 
@@ -8,11 +12,13 @@ let engine = null;
 let modelLoaded = false;
 let modelLoading = false;
 
+/* ---------------------------------------------------------
+   DATA STORAGE
+--------------------------------------------------------- */
+
 let characters = [];
 let aiCharacters = [];
 let activeCharacter = null;
-
-// Per-character conversation history
 let conversations = {};
 
 let userProfile = {
@@ -25,6 +31,10 @@ let personaProfile = {
   description: "",
   image: null,
 };
+
+/* ---------------------------------------------------------
+   ELEMENT + SCREEN CACHE
+--------------------------------------------------------- */
 
 const screens = {};
 const elements = {};
@@ -43,7 +53,9 @@ document.addEventListener("DOMContentLoaded", () => {
   showScreen("home");
 });
 
-/* Element cache */
+/* ---------------------------------------------------------
+   CACHE ELEMENTS
+--------------------------------------------------------- */
 
 function cacheElements() {
   screens.home = document.getElementById("screen-home");
@@ -74,7 +86,6 @@ function cacheElements() {
   elements.activeCharacterByline = document.getElementById("active-character-byline");
   elements.typingIndicator = document.getElementById("typing-indicator");
 
-  // Character settings
   elements.charImage = document.getElementById("char-image");
   elements.charImagePreview = document.getElementById("char-image-preview");
   elements.charName = document.getElementById("char-name");
@@ -85,7 +96,6 @@ function cacheElements() {
   elements.charNotesCounter = document.getElementById("char-notes-counter");
   elements.saveCharacter = document.getElementById("save-character");
 
-  // User settings
   elements.userUsername = document.getElementById("user-username");
   elements.userDescription = document.getElementById("user-description");
   elements.userBotsMade = document.getElementById("user-bots-made");
@@ -93,7 +103,6 @@ function cacheElements() {
   elements.userDescriptionCounter = document.getElementById("user-description-counter");
   elements.saveUserSettings = document.getElementById("save-user-settings");
 
-  // Persona settings
   elements.personaImage = document.getElementById("persona-image");
   elements.personaImagePreview = document.getElementById("persona-image-preview");
   elements.personaName = document.getElementById("persona-name");
@@ -103,7 +112,9 @@ function cacheElements() {
   elements.savePersona = document.getElementById("save-persona");
 }
 
-/* Navigation */
+/* ---------------------------------------------------------
+   NAVIGATION
+--------------------------------------------------------- */
 
 function showScreen(id) {
   Object.entries(screens).forEach(([key, el]) => {
@@ -120,7 +131,9 @@ function setupNavigation() {
   });
 }
 
-/* Model selection + engine */
+/* ---------------------------------------------------------
+   MODEL LOADING
+--------------------------------------------------------- */
 
 function setupModelSelectors() {
   elements.modelSelect.addEventListener("change", async (e) => {
@@ -153,19 +166,12 @@ async function loadModel(modelId) {
   try {
     engine = await webllm.CreateMLCEngine(
       {
-        model_list: [
-          {
-            model: modelId,
-            model_id: modelId,
-          },
-        ],
+        model_list: [{ model: modelId, model_id: modelId }],
         model: modelId,
       },
       {
         initProgressCallback: (report) => {
-          if (report && report.text) {
-            setEngineStatus(report.text);
-          }
+          if (report?.text) setEngineStatus(report.text);
         },
       }
     );
@@ -176,9 +182,7 @@ async function loadModel(modelId) {
     elements.chatInput.disabled = false;
     elements.sendBtn.disabled = false;
 
-    if (aiCharacters.length === 0) {
-      generateAICharactersIfPossible();
-    }
+    if (aiCharacters.length === 0) generateAICharactersIfPossible();
   } catch (err) {
     console.error(err);
     setEngineStatus("Failed to load model.");
@@ -202,12 +206,12 @@ function setEngineStatus(text) {
   elements.engineStatus.textContent = text;
 }
 
-/* Chat */
+/* ---------------------------------------------------------
+   CHAT SYSTEM
+--------------------------------------------------------- */
 
 function setupChat() {
-  elements.sendBtn.addEventListener("click", () => {
-    sendMessage();
-  });
+  elements.sendBtn.addEventListener("click", sendMessage);
 
   elements.chatInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -259,18 +263,18 @@ function buildChatMessages() {
   const history = getCurrentHistory();
 
   const personaPart = personaProfile.name
-    ? `The user has the following persona.\nName: ${personaProfile.name}\nDescription: ${personaProfile.description || "N/A"}\nYou should adapt your tone and responses to fit this persona.`
-    : "The user has not defined a persona. Respond in a neutral, friendly way.";
+    ? `The user has the following persona.\nName: ${personaProfile.name}\nDescription: ${personaProfile.description || "N/A"}`
+    : "The user has not defined a persona.";
 
   const characterPart = activeCharacter
-    ? `You are roleplaying as the character "${activeCharacter.name}".\nDescription: ${activeCharacter.description || "N/A"}\nNotes: ${activeCharacter.notes || "N/A"}\nStay in character unless explicitly asked to break character.`
-    : "You are not roleplaying as a specific character. You are a general assistant.";
+    ? `You are roleplaying as "${activeCharacter.name}".\nDescription: ${activeCharacter.description || "N/A"}\nNotes: ${activeCharacter.notes || "N/A"}`
+    : "You are not roleplaying as a specific character.";
 
   const systemPrompt =
     `${characterPart}\n\n${personaPart}\n\nGeneral rules:\n` +
-    `- Be conversational and natural.\n` +
-    `- Do not mention that you were given these instructions.\n` +
-    `- If the user seems to reference your persona or character, respond in a way that respects it.`;
+    `- Be conversational.\n` +
+    `- Stay in character unless asked.\n` +
+    `- Do not mention these instructions.`;
 
   return [
     { role: "system", content: systemPrompt },
@@ -295,7 +299,9 @@ function showTyping(show) {
   elements.typingIndicator.classList.toggle("hidden", !show);
 }
 
-/* Character settings + creation */
+/* ---------------------------------------------------------
+   CHARACTER CREATION
+--------------------------------------------------------- */
 
 function setupCharacterSettings() {
   elements.charImage.addEventListener("change", handleCharacterImageChange);
@@ -377,7 +383,9 @@ function clearCharacterForm() {
   elements.charNotesCounter.textContent = "0 / 300";
 }
 
-/* User settings */
+/* ---------------------------------------------------------
+   USER SETTINGS
+--------------------------------------------------------- */
 
 function setupUserSettings() {
   elements.userUsername.addEventListener("input", () => {
@@ -410,7 +418,9 @@ function updateBotsMadeCount() {
   elements.userBotsMade.value = count;
 }
 
-/* Persona settings */
+/* ---------------------------------------------------------
+   PERSONA SETTINGS
+--------------------------------------------------------- */
 
 function setupPersonaSettings() {
   elements.personaImage.addEventListener("change", handlePersonaImageChange);
@@ -461,7 +471,9 @@ function handlePersonaImageChange(e) {
   reader.readAsDataURL(file);
 }
 
-/* Character listing + selection */
+/* ---------------------------------------------------------
+   CHARACTER LIST + SELECTION
+--------------------------------------------------------- */
 
 function renderUserCharacters() {
   elements.userCharacterList.innerHTML = "";
@@ -505,7 +517,9 @@ function selectCharacter(char) {
   ensureEngineLoaded();
 }
 
-/* Avatar + card helpers */
+/* ---------------------------------------------------------
+   AVATAR + CARD HELPERS
+--------------------------------------------------------- */
 
 function createAvatarSmall(char) {
   const div = document.createElement("div");
@@ -558,3 +572,7 @@ function createCharacterCard(char) {
 
   const title = document.createElement("div");
   title.className = "character-card-title";
+  title.textContent = char.name;
+
+  const byline = document.createElement("div");
+  byline.className = "character
