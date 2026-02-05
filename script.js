@@ -1,4 +1,4 @@
-import * as webllm from "https://esm.run/@mlc-ai/web-llm";
+import * as webllm from "https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm/dist/index.min.js";
 
 const MODEL_LLAMA3 = "Llama-3-8B-Instruct-q4f16_1";
 const MODEL_PHI3 = "Phi-3-mini-4k-instruct-q4f16_1";
@@ -13,7 +13,6 @@ let aiCharacters = [];
 let activeCharacter = null;
 
 // Per-character conversation history
-// key: character.id or "global"
 let conversations = {};
 
 let userProfile = {
@@ -324,7 +323,7 @@ function setupCharacterSettings() {
       id: crypto.randomUUID(),
       name,
       description: elements.charDescription.value.trim(),
-      greeting: "", // you can add a dedicated greeting field later
+      greeting: "",
       style: "",
       notes: elements.charNotes.value.trim(),
       by: userProfile.username || "You",
@@ -398,7 +397,7 @@ function setupUserSettings() {
     if (userProfile.username) {
       elements.homeGreeting.textContent = `Hello, ${userProfile.username}`;
     } else {
-      elements.homeGreeting.textContent = "Hello, Chris";
+      elements.homeGreeting.textContent = "Hello there";
     }
 
     updateBotsMadeCount();
@@ -559,106 +558,3 @@ function createCharacterCard(char) {
 
   const title = document.createElement("div");
   title.className = "character-card-title";
-  title.textContent = char.name || "Untitled character";
-
-  const meta = document.createElement("div");
-  meta.className = "character-card-meta";
-  meta.textContent = `Character by: ${char.by || "Unknown"}`;
-
-  titleWrap.appendChild(title);
-  titleWrap.appendChild(meta);
-
-  header.appendChild(avatar);
-  header.appendChild(titleWrap);
-
-  const body = document.createElement("div");
-  body.className = "character-card-body";
-  body.textContent = char.description || "No description yet.";
-
-  card.appendChild(header);
-  card.appendChild(body);
-
-  return card;
-}
-
-/* AI-made characters */
-
-function setupAICharacters() {
-  elements.refreshAICharacters.addEventListener("click", () => {
-    generateAICharactersIfPossible(true);
-  });
-
-  elements.aiCharacterStatus.textContent =
-    "AI-made characters are in beta. They’ll appear after the model loads.";
-}
-
-async function generateAICharactersIfPossible(force = false) {
-  if (!engine || !modelLoaded) {
-    if (force) {
-      elements.aiCharacterStatus.textContent =
-        "Model not ready yet — AI-made characters are still in beta.";
-    }
-    return;
-  }
-
-  try {
-    elements.aiCharacterStatus.textContent = "Generating AI-made characters...";
-    const prompt =
-      "Create 3 distinct fictional characters as a JSON array. " +
-      "Each item must have keys: name, description, style, greeting. " +
-      "Respond with JSON only, no extra text.";
-
-    const completion = await engine.chat.completions.create({
-      model: currentModelId,
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are a character generator. Always respond with valid JSON only.",
-        },
-        { role: "user", content: prompt },
-      ],
-    });
-
-    const raw = completion.choices?.[0]?.message?.content ?? "[]";
-    let parsed;
-    try {
-      parsed = JSON.parse(raw);
-    } catch {
-      const match = raw.match(/```json([\s\S]*?)```/i);
-      if (match) {
-        parsed = JSON.parse(match[1]);
-      } else {
-        throw new Error("Invalid JSON from model");
-      }
-    }
-
-    aiCharacters = (Array.isArray(parsed) ? parsed : []).slice(0, 3).map(
-      (c, idx) => ({
-        id: `ai-${idx}-${Date.now()}`,
-        name: c.name || `AI Character ${idx + 1}`,
-        description: c.description || "",
-        greeting: c.greeting || "",
-        style: c.style || "",
-        notes: "",
-        by: "AI",
-        image: null,
-      })
-    );
-
-    renderAICharacters();
-    elements.aiCharacterStatus.textContent = "AI-made characters generated.";
-  } catch (err) {
-    console.error(err);
-    elements.aiCharacterStatus.textContent =
-      "AI-made characters are in beta and may not always load correctly.";
-  }
-}
-
-function renderAICharacters() {
-  elements.aiCharacterCards.innerHTML = "";
-  aiCharacters.forEach((char) => {
-    const card = createCharacterCard(char);
-    elements.aiCharacterCards.appendChild(card);
-  });
-}
