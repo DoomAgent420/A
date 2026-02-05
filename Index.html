@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>JaveusAI</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" href="icon.png" />
+</head>
+<body>
+  <div class="app-root">
+    <!-- Left sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-section">
+        <h2 class="sidebar-title">Character Creator</h2>
+        <ul id="user-character-list" class="character-list"></ul>
+        <button class="nav-btn" data-screen="character-settings">New character</button>
+      </div>
+
+      <div class="sidebar-section">
+        <h2 class="sidebar-title">Persona Creator</h2>
+        <button class="nav-btn" data-screen="persona-settings">Open Persona Settings</button>
+      </div>
+
+      <div class="sidebar-section">
+        <h2 class="sidebar-title">User settings</h2>
+        <button class="nav-btn" data-screen="user-settings">Open User Settings</button>
+      </div>
+
+      <div class="sidebar-section">
+        <h2 class="sidebar-title">AI settings</h2>
+        <button class="nav-btn" data-screen="ai-settings">Open AI Settings</button>
+      </div>
+    </aside>
+
+    <!-- Main content -->
+    <main class="main">
+      <!-- Home screen -->
+      <section id="screen-home" class="screen active-screen">
+        <div class="hero">
+          <div class="hero-overlay">
+            <h1 class="hero-title" id="home-greeting">Hello, Chris</h1>
+            <p class="hero-subtitle">Welcome back to JaveusAI.</p>
+          </div>
+        </div>
+
+        <div class="home-actions">
+          <button class="primary-btn" data-screen="chat">Start Chat</button>
+          <button class="secondary-btn" data-screen="character-settings">Character Creator</button>
+          <button class="secondary-btn" data-screen="persona-settings">Persona Creator</button>
+          <button class="secondary-btn" data-screen="user-settings">User Settings</button>
+          <button class="secondary-btn" data-screen="ai-settings">AI Settings</button>
+        </div>
+
+        <section class="card-section">
+          <h2>Your characters</h2>
+          <div id="user-character-cards" class="card-grid"></div>
+        </section>
+
+        <section class="card-section">
+          <div class="section-header">
+            <h2>AI made characters</h2>
+            <button id="refresh-ai-characters" class="tiny-btn">↻ Refresh</button>
+          </div>
+          <div id="ai-character-cards" class="card-grid"></div>
+          <p id="ai-character-status" class="status-text"></p>
+        </section>
+      </section>
+
+      <!-- Chat screen -->
+      <section id="screen-chat" class="screen">
+        <header class="chat-header">
+          <div>
+            <h2 id="active-character-name">No character selected</h2>
+            <p id="active-character-byline" class="byline"></p>
+          </div>
+          <div class="model-select-wrapper">
+            <label for="model-select">Model:</label>
+            <select id="model-select">
+              <option value="Llama-3-8B-Instruct-q4f16_1" selected>
+                LLaMA‑3 8B Instruct
+              </option>
+              <option value="Phi-3-mini-4k-instruct-q4f16_1">
+                Phi‑3 Mini 4K Instruct
+              </option>
+            </select>
+          </div>
+        </header>
+
+        <div id="chat-log" class="chat-log"></div>
+        <div id="typing-indicator" class="typing-indicator hidden">
+          Thinking…
+        </div>
+
+        <footer class="chat-input-bar">
+          <textarea id="chat-input" placeholder="Type your message..." disabled></textarea>
+          <button id="send-btn" class="primary-btn" disabled>Send</button>
+        </footer>
+
+        <p id="engine-status" class="status-text"></p>
+      </section>
+
+      <!-- Character settings screen -->
+      <section id="screen-character-settings" class="screen">
+        <h2>Character</h2>
+
+        <div class="form-grid">
+          <label>
+            Image (max ~10MB)
+            <input id="char-image" type="file" accept="image/*" />
+            <div class="image-preview" id="char-image-preview">No image selected</div>
+          </label>
+
+          <label>
+            Name (20 char max)
+            <input id="char-name" type="text" maxlength="20" />
+            <div class="char-counter" id="char-name-counter">0 / 20</div>
+          </label>
+
+          <label>
+            Description (750 char max)
+            <textarea id="char-description" maxlength="750"></textarea>
+            <div class="char-counter" id="char-description-counter">0 / 750</div>
+          </label>
+
+          <label>
+            Notes for the AI (300 char max)
+            <textarea id="char-notes" maxlength="300"></textarea>
+            <div class="char-counter" id="char-notes-counter">0 / 300</div>
+          </label>
+        </div>
+
+        <div class="form-actions">
+          <button id="save-character" class="primary-btn">Save character</button>
+          <button class="secondary-btn" data-screen="home">Back to home</button>
+        </div>
+      </section>
+
+      <!-- Persona settings screen -->
+      <section id="screen-persona-settings" class="screen">
+        <h2>Persona</h2>
+
+        <div class="form-grid">
+          <label>
+            Image (max ~10MB)
+            <input id="persona-image" type="file" accept="image/*" />
+            <div class="image-preview" id="persona-image-preview">No image selected</div>
+          </label>
+
+          <label>
+            Name (20 char max)
+            <input id="persona-name" type="text" maxlength="20" />
+            <div class="char-counter" id="persona-name-counter">0 / 20</div>
+          </label>
+
+          <label>
+            Description (750 char max)
+            <textarea id="persona-description" maxlength="750"></textarea>
+            <div class="char-counter" id="persona-description-counter">0 / 750</div>
+          </label>
+        </div>
+
+        <div class="form-actions">
+          <button id="save-persona" class="primary-btn">Save persona</button>
+          <button class="secondary-btn" data-screen="home">Back to home</button>
+        </div>
+      </section>
+
+      <!-- User settings screen -->
+      <section id="screen-user-settings" class="screen">
+        <h2>General settings</h2>
+
+        <div class="form-grid">
+          <label>
+            Username (20 char max)
+            <input id="user-username" type="text" maxlength="20" />
+            <div class="char-counter" id="user-username-counter">0 / 20</div>
+          </label>
+
+          <label>
+            Description (500 char max)
+            <textarea id="user-description" maxlength="500"></textarea>
+            <div class="char-counter" id="user-description-counter">0 / 500</div>
+          </label>
+
+          <label>
+            Bots made
+            <input id="user-bots-made" type="text" disabled />
+          </label>
+        </div>
+
+        <div class="form-actions">
+          <button id="save-user-settings" class="primary-btn">Save</button>
+          <button class="secondary-btn" data-screen="home">Back to home</button>
+        </div>
+      </section>
+
+      <!-- AI settings screen -->
+      <section id="screen-ai-settings" class="screen">
+        <h2>AI settings</h2>
+        <div class="form-grid">
+          <label>
+            Active model
+            <select id="ai-settings-model-select">
+              <option value="Llama-3-8B-Instruct-q4f16_1" selected>
+                LLaMA‑3 8B Instruct
+              </option>
+              <option value="Phi-3-mini-4k-instruct-q4f16_1">
+                Phi‑3 Mini 4K Instruct
+              </option>
+            </select>
+          </label>
+        </div>
+        <p id="ai-settings-status" class="status-text"></p>
+        <div class="form-actions">
+          <button id="reload-model" class="secondary-btn">Reload model</button>
+          <button class="secondary-btn" data-screen="home">Back to home</button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module" src="script.js"></script>
+</body>
+</html>
